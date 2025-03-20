@@ -16,7 +16,7 @@ function abs_path() {
 
 cd "${BDIR}"
 
-clang_link_cmd="$(ninja -t commands clang | grep -Ee ' -o bin/clang-16 ' | sed -nEe 's/^.*\s+&&\s+(.*)\s+&&\s+(.*)$/\1/p')"
+clang_link_cmd="$(ninja -t commands clang | grep -Ee ' -o bin/clang-20 ' | sed -nEe 's/^.*\s+&&\s+(.*)\s+&&\s+(.*)$/\1/p')"
 clang_executable="$(echo $clang_link_cmd | sed -nEe 's!^([^ ]+/clang\+\+) .*$!\1!p')"
 if [[ ! -x $clang_executable ]]; then echo "Compiler is not clang: $clang_executable" ; fi
 

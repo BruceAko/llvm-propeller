@@ -22,4 +22,4 @@ PATH_TO_CREATE_LLVM_PROF=${BASE_DIR}/create_llvm_prof_build
 PATH_TO_OPTIMIZED_PROPELLER_BUILD=${BASE_DIR}/optimized_propeller_build
 
 cd ${PATH_TO_OPTIMIZED_PROPELLER_BUILD}
-rm -f bin/clang-16 && /usr/bin/time -v ninja clang
+rm -f bin/clang-${CLANG_VERSION} && /usr/bin/time -v ninja clang

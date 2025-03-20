@@ -175,17 +175,33 @@ ninja clean
 # Profile labels binary, just 100 compilations should be good enough.
 ninja -t commands | head -100 >& ./perf_commands.sh
 chmod +x ./perf_commands.sh
-perf record -e cycles:u -j any,u -- ./perf_commands.sh
-ls perf.data
 
-# Copy the profiles for future use
+# Profile Bolt
+cd ${BENCHMARKING_CLANG_BUILD}/symlink_to_clang_binary
+ln -sf ${PATH_TO_INSTRUMENTED_BOLT_CLANG_BUILD}/bin/clang-${CLANG_VERSION} clang
+ln -sf ${PATH_TO_INSTRUMENTED_BOLT_CLANG_BUILD}/bin/clang-${CLANG_VERSION} clang++
 cd ${BENCHMARKING_CLANG_BUILD}
-cp perf.data ${PATH_TO_PROFILES}
+perf record -e cycles:u -j any,u -- ./perf_commands.sh
+cp perf.data ${PATH_TO_PROFILES}/perf_bolt.data
+rm perf.data
+
+# Profile Propeller
+cd ${BENCHMARKING_CLANG_BUILD}/symlink_to_clang_binary
+ln -sf ${PATH_TO_INSTRUMENTED_PROPELLER_CLANG_BUILD}/bin/clang-${CLANG_VERSION} clang
+ln -sf ${PATH_TO_INSTRUMENTED_PROPELLER_CLANG_BUILD}/bin/clang-${CLANG_VERSION} clang++
+cd ${BENCHMARKING_CLANG_BUILD}
+perf record -e cycles:u -j any,u -- ./perf_commands.sh
+cp perf.data ${PATH_TO_PROFILES}/perf_propeller.data
+
+# Restore to pristine baseline
+cd ${BENCHMARKING_CLANG_BUILD}/symlink_to_clang_binary
+ln -sf ${PATH_TO_PRISTINE_BASELINE_CLANG_BUILD}/bin/clang-${CLANG_VERSION} clang
+ln -sf ${PATH_TO_PRISTINE_BASELINE_CLANG_BUILD}/bin/clang-${CLANG_VERSION} clang++
 
 # Convert Profiles to BOLT format.
 PATH_TO_PERF2BOLT=${PATH_TO_TRUNK_LLVM_INSTALL}/bin/perf2bolt
 cd ${PATH_TO_PROFILES}
-/usr/bin/time -v ${PATH_TO_PERF2BOLT} ${PATH_TO_INSTRUMENTED_BOLT_CLANG_BUILD}/bin/clang-${CLANG_VERSION} -p ${PATH_TO_PROFILES}/perf.data -o ${PATH_TO_PROFILES}/perf.fdata -w ${PATH_TO_PROFILES}/perf.yaml 2> ${PATH_TO_ALL_RESULTS}/mem_bolt_profile_conversion.txt
+/usr/bin/time -v ${PATH_TO_PERF2BOLT} ${PATH_TO_INSTRUMENTED_BOLT_CLANG_BUILD}/bin/clang-${CLANG_VERSION} -p ${PATH_TO_PROFILES}/perf_bolt.data -o ${PATH_TO_PROFILES}/perf.fdata -w ${PATH_TO_PROFILES}/perf.yaml 2> ${PATH_TO_ALL_RESULTS}/mem_bolt_profile_conversion.txt
 
 # Rewrite binary to get a BOLT optimized clang.
 PATH_TO_LLVMBOLT=${PATH_TO_TRUNK_LLVM_INSTALL}/bin/llvm-bolt
@@ -216,7 +232,7 @@ ls create_llvm_prof
 
 cp create_llvm_prof ${PATH_TO_ALL_BINARIES}
 
-/usr/bin/time -v ${PATH_TO_CREATE_LLVM_PROF}/bin/create_llvm_prof  --format=propeller --binary=${PATH_TO_INSTRUMENTED_PROPELLER_CLANG_BUILD}/bin/clang-${CLANG_VERSION}  --profile=${PATH_TO_PROFILES}/perf.data --out=${PATH_TO_PROFILES}/cluster.txt  --propeller_symorder=${PATH_TO_PROFILES}/symorder.txt --profiled_binary_name=clang-${CLANG_VERSION} --propeller_call_chain_clustering --propeller_chain_split 2> ${PATH_TO_ALL_RESULTS}/mem_propeller_profile_conversion.txt
+/usr/bin/time -v ${PATH_TO_CREATE_LLVM_PROF}/bin/create_llvm_prof  --format=propeller --binary=${PATH_TO_INSTRUMENTED_PROPELLER_CLANG_BUILD}/bin/clang-${CLANG_VERSION}  --profile=${PATH_TO_PROFILES}/perf_propeller.data --out=${PATH_TO_PROFILES}/cluster.txt  --propeller_symorder=${PATH_TO_PROFILES}/symorder.txt --profiled_binary_name=clang-${CLANG_VERSION} --propeller_call_chain_clustering --propeller_chain_split 2> ${PATH_TO_ALL_RESULTS}/mem_propeller_profile_conversion.txt
 
 # Build a Propeller Optimized binary.
 OPTIMIZED_PROPELLER_CC_LD_CMAKE_FLAGS=(
@@ -231,7 +247,7 @@ cmake -G Ninja "${COMMON_CMAKE_FLAGS[@]}" "${OPTIMIZED_PROPELLER_CC_LD_CMAKE_FLA
 ninja clang
 cp bin/clang ${PATH_TO_ALL_BINARIES}/clang.propeller
 # Measure the peak RSS of the final link action on cached native object files.
-rm bin/clang-16 && /usr/bin/time -v ninja clang 2> ${PATH_TO_ALL_RESULTS}/mem_propeller_build.txt
+rm bin/clang-${CLANG_VERSION} && /usr/bin/time -v ninja clang 2> ${PATH_TO_ALL_RESULTS}/mem_propeller_build.txt
 
 # Run comparison of baseline verus propeller optimized clang versus bolt
 # optimized clang

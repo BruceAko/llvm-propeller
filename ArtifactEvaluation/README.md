@@ -9,8 +9,9 @@ Access to hardware performance counters using linux perf.
 
 To run the experiments for Artifact Evaluation
 ```
+# sudo su
 $ cd llvm-propeller/ArtifactEvaluation
-$ Scripts/optimize_clang.sh
+$ CC=clang-20 CXX=clang++-20 Scripts/optimize_clang.sh
 
 # Generate heatmap
 $ Scripts/gen_heatmap.sh

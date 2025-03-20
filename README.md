@@ -24,9 +24,9 @@ sudo apt install -y wget lsb-release software-properties-common gnupg
 # Propeller builds with Clang 16.0.0 or newer.
 wget https://apt.llvm.org/llvm.sh
 chmod +x llvm.sh
-sudo ./llvm.sh 16
-export CC=clang-16
-export CXX=clang++-16
+sudo ./llvm.sh 20
+export CC=clang-20
+export CXX=clang++-20
 
 # For the CMake build
 sudo apt-get update && sudo apt-get install -y \

@@ -15,7 +15,7 @@ perf report -D -i $input >& ${TMP_FILE}
 # Look for mmap of binary. E.g.:
 # PERF_RECORD_MMAP2 396635/396635: [0x5567604d6000(0x20a0e000) @ 0 f8:0f 11 0]: r-xp /usr/local/google/home/tejohnson/extra/adgroup_server/Experiment/citc_cron_adgroup2_20190326-0000/adgroup-server.llvm_thinlto_stable
 # Not sure if correct to always use first number...
-offset=$(grep PERF_RECORD_MMAP2 ${TMP_FILE} | grep $name | head -1 | sed "s,.*\[\(0x55[0-9a-f]*\)(.*,\1,")
+offset=$(grep PERF_RECORD_MMAP2 ${TMP_FILE} | grep $name | head -1 | sed "s,.*\[\(0x[0-9a-f]*\)(.*,\1,")
 #offset=0
 #offset=0x555557223000
 #offset=0x5567604d6000
@@ -29,8 +29,8 @@ offset=$(grep PERF_RECORD_MMAP2 ${TMP_FILE} | grep $name | head -1 | sed "s,.*\[
 for i in 1 4096 2097152; do
   grep -A 6 PERF_RECORD_SAMPLE ${TMP_FILE} | grep -A 1 -B 5 "thread: $name" | \
 awk "BEGIN { count=0; } /PERF_RECORD_SAMPLE/ {addr = strtonum(\$7)-$offset; \
-     if (addr < 1000000000) count++; \
-     if (addr < 1000000000) print \$7,count,int((addr-88080384)/$i)*$i}" >  out-$i.txt
+     if (addr >= 0 && addr < 1000000000) count++; \
+     if (addr >= 0 && addr < 1000000000) print \$7,count,addr}" >  out-$i.txt
 done
 
 echo number of samples $(wc -l out-4096.txt)
